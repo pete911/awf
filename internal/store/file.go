@@ -50,7 +50,7 @@ func initFile(account types.Account, region string) (File, error) {
 	return f, nil
 }
 
-func (f File) ListAccounts() ([]types.Account, error) {
+func (f File) ListAccounts() (types.Accounts, error) {
 	entry, err := os.ReadDir(f.dir)
 	if err != nil {
 		return nil, err

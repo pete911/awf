@@ -17,6 +17,8 @@ simply run `rm -r ~/.awf/*` and re-run the import.
 ## commands
 
 - network interfaces `aws ni <IP|CIDR|ID>` e.g. `aws ni 10.0.0.0/16` or `aws ni 10.60.3.25 10.5.0.0/24`
+- network vpcs `aws vpc <IP|CIDR|ID>`
+- network subnets `aws subnet <IP|CIDR|ID>`
 
 ## examples
 

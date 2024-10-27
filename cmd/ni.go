@@ -24,7 +24,7 @@ func init() {
 
 func runNi(cmd *cobra.Command, args []string) {
 	if len(args) == 0 {
-		fmt.Println("no IP provided")
+		fmt.Println("no argument provided")
 		return
 	}
 
@@ -59,10 +59,10 @@ func runNi(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	printIp(matched, vpcs, sunbets)
+	printNi(matched, vpcs, sunbets)
 }
 
-func printIp(in types.NetworkInterfaces, vpcs types.Vpcs, subnets types.Subnets) {
+func printNi(in types.NetworkInterfaces, vpcs types.Vpcs, subnets types.Subnets) {
 	table := out.NewTable(os.Stdout)
 	tableHeader := []string{"ACCOUNT ID", "AWS PROFILE", "ENI", "TYPE", "DESCRIPTION", "PRIVATE IP", "PUBLIC IP", "VPC ID", "VPC NAME", "SUBNET ID", "SUBNET NAME"}
 	table.AddRow(tableHeader...)
@@ -85,9 +85,9 @@ func printIp(in types.NetworkInterfaces, vpcs types.Vpcs, subnets types.Subnets)
 			strings.Join(v.PrivateIpAddresses, ", "),
 			v.PublicIP,
 			out.TrimTo(v.VpcId, 15),
-			vpcName,
+			out.TrimTo(vpcName, 15),
 			out.TrimTo(v.SubnetId, 15),
-			subnetName,
+			out.TrimTo(subnetName, 15),
 		)
 	}
 	table.Print()
