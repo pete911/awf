@@ -1,11 +1,18 @@
 # awf
 
-Search aws resources - AWFind. Search is done in local storage, you need to run `import` first.
+Search aws resources - AWFind. Search is done in local storage, you need to run `import` first. The difference between
+aws cli and this tool is:
+- speed, search is done on already imported resources
+- no throttling (same as above, search is done against local storage)
+- if the import is done for multiple accounts, search is done across all imported resources
 
 ## import AWS data
 
 - `AWS_PROFILE=<profile> awf import`
 - for all profiles `for p in $(aws configure list-profiles);do echo $p; AWS_PROFILE=$p awf import; done`
+
+Imported resources are stored under `$HOME/.awf/` directory. In case import fails, or data needs to be cleaned up,
+simply run `rm -r ~/.awf/*` and re-run the import.
 
 ## commands
 
