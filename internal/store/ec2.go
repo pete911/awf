@@ -3,11 +3,11 @@ package store
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	ec2types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	"github.com/pete911/awf/internal/types"
-	"log/slog"
 	"sync"
 	"time"
 )
@@ -20,9 +20,7 @@ var ec2Importers = []ec2Importer{
 	describeNetworkInterfaces,
 }
 
-func ec2Import(logger *slog.Logger, account types.Account, cfg aws.Config, file File) error {
-	logger = logger.With("component", "ec2-import")
-
+func ec2Import(account types.Account, cfg aws.Config, file File) error {
 	svc := ec2.NewFromConfig(cfg)
 
 	var hasErrors bool
@@ -33,12 +31,12 @@ func ec2Import(logger *slog.Logger, account types.Account, cfg aws.Config, file 
 			defer wg.Done()
 			name, content, err := i(svc)
 			if err != nil {
-				logger.Error(err.Error())
+				fmt.Println(err.Error())
 				hasErrors = true
 				return
 			}
 			if err := file.write(account, cfg.Region, name, content); err != nil {
-				logger.Error(err.Error())
+				fmt.Println(err.Error())
 				hasErrors = true
 			}
 		}()
@@ -67,7 +65,7 @@ func describeVpcs(svc *ec2.Client) (string, any, error) {
 		}
 		in.NextToken = out.NextToken
 	}
-	return "ec2.describe-vpcs", vpcs, nil
+	return ec2VpcsKey, vpcs, nil
 }
 
 func describeSubnets(svc *ec2.Client) (string, any, error) {
@@ -87,7 +85,7 @@ func describeSubnets(svc *ec2.Client) (string, any, error) {
 		}
 		in.NextToken = out.NextToken
 	}
-	return "ec2.describe-subnets", subnets, nil
+	return ec2SubnetsKey, subnets, nil
 }
 
 func describeNetworkInterfaces(svc *ec2.Client) (string, any, error) {
@@ -107,5 +105,5 @@ func describeNetworkInterfaces(svc *ec2.Client) (string, any, error) {
 		}
 		in.NextToken = out.NextToken
 	}
-	return "ec2.describe-network-interfaces", nis, nil
+	return ec2NetworkInterfacesKey, nis, nil
 }

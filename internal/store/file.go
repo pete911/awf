@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	ec2types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	"github.com/pete911/awf/internal/types"
-	"log/slog"
 	"os"
 	"path/filepath"
 )
@@ -13,27 +13,29 @@ import (
 const (
 	rootDir     = ".awf"
 	accountFile = "_account"
+
+	ec2VpcsKey              = "ec2.describe-vpcs"
+	ec2SubnetsKey           = "ec2.describe-subnets"
+	ec2NetworkInterfacesKey = "ec2.describe-network-interfaces"
 )
 
 type File struct {
-	logger *slog.Logger
-	dir    string
+	dir string
 }
 
-func LoadFile(logger *slog.Logger) (File, error) {
+func LoadFile() (File, error) {
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return File{}, err
 	}
 
 	return File{
-		logger: logger.With("component", "file-store"),
-		dir:    filepath.Join(home, rootDir),
+		dir: filepath.Join(home, rootDir),
 	}, nil
 }
 
-func initFile(logger *slog.Logger, account types.Account, region string) (File, error) {
-	f, err := LoadFile(logger)
+func initFile(account types.Account, region string) (File, error) {
+	f, err := LoadFile()
 	if err != nil {
 		return File{}, err
 	}
@@ -90,11 +92,31 @@ func (f File) ListRegions(account types.Account) ([]string, error) {
 	return regions, nil
 }
 
-// Read reads and (json) marshals content of the file . Region can be empty (e.g. route53).
-// If the file is not found, NotFoundError is returned.
-func (f File) Read(account types.Account, region, name string, v any) error {
-	path := f.filePath(account, region, name)
-	return f.read(path, v)
+// DescribeNetworkInterfaces returns network interfaces. If the file is not found,
+// NotFoundError is returned. Meaning that the user need to run import first.
+func (f File) DescribeNetworkInterfaces() (types.NetworkInterfaces, error) {
+	accounts, err := f.ListAccounts()
+	if err != nil {
+		return types.NetworkInterfaces{}, err
+	}
+
+	var networkInterfaces []types.NetworkInterface
+	for _, account := range accounts {
+		regions, err := f.ListRegions(account)
+		if err != nil {
+			return types.NetworkInterfaces{}, err
+		}
+		for _, region := range regions {
+			path := f.filePath(account.Id, region, ec2NetworkInterfacesKey)
+
+			var nis []ec2types.NetworkInterface
+			if err := f.read(path, &nis); err != nil {
+				return nil, err
+			}
+			networkInterfaces = append(networkInterfaces, types.ToNetworkInterfaces(account, region, nis)...)
+		}
+	}
+	return networkInterfaces, nil
 }
 
 func (f File) read(path string, v any) error {
@@ -115,7 +137,7 @@ func (f File) read(path string, v any) error {
 // Write writes content of the supplied (json) struct under supplied <name> file. Region
 // can be empty (e.g. route53)
 func (f File) write(account types.Account, region, name string, v any) error {
-	path := f.filePath(account, region, name)
+	path := f.filePath(account.Id, region, name)
 	b, err := json.MarshalIndent(v, "", "  ")
 	if err != nil {
 		return fmt.Errorf("marshal %s: %w", path, err)
@@ -123,9 +145,9 @@ func (f File) write(account types.Account, region, name string, v any) error {
 	return os.WriteFile(path, b, 0644)
 }
 
-func (f File) filePath(account types.Account, region, name string) string {
+func (f File) filePath(accountId, region, name string) string {
 	if region == "" {
-		return filepath.Join(f.dir, account.Id, name)
+		return filepath.Join(f.dir, accountId, name)
 	}
-	return filepath.Join(f.dir, account.Id, region, name)
+	return filepath.Join(f.dir, accountId, region, name)
 }

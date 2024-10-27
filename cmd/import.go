@@ -24,9 +24,7 @@ func init() {
 }
 
 func runImport(cmd *cobra.Command, _ []string) {
-	logger := GlobalFlags.Logger().With("cmd", cmd.Use)
-
-	if err := store.Import(logger, importFlags.Region); err != nil {
+	if err := store.Import(importFlags.Region); err != nil {
 		fmt.Println(err.Error())
 		os.Exit(1)
 	}

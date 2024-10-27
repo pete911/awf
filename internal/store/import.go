@@ -9,21 +9,18 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/iam"
 	"github.com/aws/aws-sdk-go-v2/service/sts"
 	"github.com/pete911/awf/internal/types"
-	"log/slog"
 	"os"
 	"sync"
 	"time"
 )
 
-type importer func(logger *slog.Logger, account types.Account, cfg aws.Config, file File) error
+type importer func(account types.Account, cfg aws.Config, file File) error
 
 var importers = []importer{
 	ec2Import,
 }
 
-func Import(logger *slog.Logger, region string) error {
-	logger = logger.With("component", "import")
-
+func Import(region string) error {
 	cfg, err := newAwsConfig(region)
 	if err != nil {
 		return err
@@ -33,7 +30,7 @@ func Import(logger *slog.Logger, region string) error {
 	if err != nil {
 		return err
 	}
-	file, err := initFile(logger, account, cfg.Region)
+	file, err := initFile(account, cfg.Region)
 	if err != nil {
 		return err
 	}
@@ -44,8 +41,8 @@ func Import(logger *slog.Logger, region string) error {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			if err := i(logger, account, cfg, file); err != nil {
-				logger.Error(err.Error())
+			if err := i(account, cfg, file); err != nil {
+				fmt.Printf(err.Error())
 				hasErrors = true
 			}
 		}()
