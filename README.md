@@ -23,9 +23,8 @@ simply run `rm -r ~/.awf/*` and re-run the import.
 ```
 aws ni 10.60.3.25 10.5.0.0/24
 
-ACCOUNT ID    AWS PROFILE   ENI         TYPE                       DESCRIPTION                               PRIVATE IP    PUBLIC IP      VPC         SUBNET
-123456789012  test-one      eni-xyzabc  application_load_balancer  ELB app/test-one/abcxyz123                10.60.3.25                   vpc-xyz123  subnet-deef
-987654321098  test-two      eni-abcxyz  nat_gateway                Interface for NAT Gateway nat-xyzabc1...  10.5.0.1      216.58.212.238 vpc-123xyz  subnet-beef
-987654321098  test-two      eni-abc123  network_load_balancer      ELB net/test-two-alb-internal/xyzabc1...  10.5.0.2                     vpc-123456  subnet-geef
+ACCOUNT ID    AWS PROFILE   ENI         TYPE  DESCRIPTION                               PRIVATE IP    PUBLIC IP      VPC ID      VPC NAME  SUBNET ID    SUBNET NAME
+123456789012  test-one      eni-xyzabc  alb   ELB app/test-one/abcxyz123                10.60.3.25                   vpc-xyz123  test      subnet-deef  test-a
+987654321098  test-two      eni-abcxyz  nat   Interface for NAT Gateway nat-xyzabc1...  10.5.0.1      216.58.212.238 vpc-123xyz  test      subnet-beef  test-a
+987654321098  test-two      eni-abc123  nlb   ELB net/test-two-alb-internal/xyzabc1...  10.5.0.2                     vpc-123456  test      subnet-geef  test-b
 ```
-

@@ -29,6 +29,18 @@ func runNi(cmd *cobra.Command, args []string) {
 	}
 
 	fileStore := LoadFileStore()
+	vpcs, err := fileStore.DescribeVpcs()
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
+
+	sunbets, err := fileStore.DescribeSubnets()
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
+
 	networkInterfaces, err := fileStore.DescribeNetworkInterfaces()
 	if err != nil {
 		fmt.Println(err.Error())
@@ -47,14 +59,23 @@ func runNi(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	printIp(matched)
+	printIp(matched, vpcs, sunbets)
 }
 
-func printIp(in types.NetworkInterfaces) {
+func printIp(in types.NetworkInterfaces, vpcs types.Vpcs, subnets types.Subnets) {
 	table := out.NewTable(os.Stdout)
-	tableHeader := []string{"ACCOUNT ID", "AWS PROFILE", "ENI", "TYPE", "DESCRIPTION", "PRIVATE IP", "PUBLIC IP", "VPC", "SUBNET"}
+	tableHeader := []string{"ACCOUNT ID", "AWS PROFILE", "ENI", "TYPE", "DESCRIPTION", "PRIVATE IP", "PUBLIC IP", "VPC ID", "VPC NAME", "SUBNET ID", "SUBNET NAME"}
 	table.AddRow(tableHeader...)
 	for _, v := range in {
+		var vpcName string
+		if x := vpcs.GetById(v.VpcId); len(x) != 0 {
+			vpcName = x[0].Name
+		}
+		var subnetName string
+		if x := subnets.GetById(v.SubnetId); len(x) != 0 {
+			subnetName = x[0].Name
+		}
+
 		table.AddRow(
 			v.Account.Id,
 			v.Account.Profile,
@@ -63,8 +84,10 @@ func printIp(in types.NetworkInterfaces) {
 			out.TrimTo(v.Description, 40),
 			strings.Join(v.PrivateIpAddresses, ", "),
 			v.PublicIP,
-			v.VpcId,
-			v.SubnetId,
+			out.TrimTo(v.VpcId, 15),
+			vpcName,
+			out.TrimTo(v.SubnetId, 15),
+			subnetName,
 		)
 	}
 	table.Print()

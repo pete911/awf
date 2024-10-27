@@ -160,15 +160,15 @@ func getNiType(in types.NetworkInterface) string {
 	// network load balancer has requester id account id and description prefix 'ELB net/', but the interface type
 	// is set to network_load_balancer as well
 	if in.InterfaceType == types.NetworkInterfaceTypeNetworkLoadBalancer {
-		return string(in.InterfaceType)
+		return "nlb"
 	}
 	// application load balancer has requester id amazon-elb and description prefix 'ELB app/'
 	if strings.HasPrefix(description, "ELB app/") {
-		return "application_load_balancer"
+		return "alb"
 	}
 	// classic load balancer has requester id amazon-elb and description prefix 'ELB '
 	if requesterId == "amazon-elb" && strings.HasPrefix(description, "ELB ") {
-		return "load_balancer"
+		return "elb"
 	}
 
 	if strings.HasPrefix(description, "ElastiCache ") {
@@ -193,7 +193,7 @@ func getNiType(in types.NetworkInterface) string {
 		return "ecs"
 	}
 	if strings.HasPrefix(description, "AWS created network interface for directory ") {
-		return "active_directory"
+		return "ad"
 	}
 	if strings.HasPrefix(description, "Created By Amazon Workspaces for AWS Account ID ") {
 		return "workspace"
@@ -205,8 +205,10 @@ func getNiType(in types.NetworkInterface) string {
 		return "redshift"
 	}
 	if in.InterfaceType == types.NetworkInterfaceTypeNatGateway {
-		// for consistency, return underscore instead of camelCase
-		return "nat_gateway"
+		return "nat"
+	}
+	if strings.HasPrefix(description, "Interface for NAT Gateway nat-") {
+		return "nat"
 	}
 	return string(in.InterfaceType)
 }

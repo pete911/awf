@@ -75,19 +75,11 @@ func (f File) ListRegions(account types.Account) ([]string, error) {
 		return nil, err
 	}
 
-	var global bool
 	var regions []string
 	for _, e := range entry {
 		if e.IsDir() {
 			regions = append(regions, e.Name())
 		}
-		// we found some file that is not '_account', this means that we have global region files e.g. iam, route53 ...
-		if e.Type().IsRegular() && e.Name() != accountFile {
-			global = true
-		}
-	}
-	if global {
-		regions = append(regions, "")
 	}
 	return regions, nil
 }
@@ -97,14 +89,14 @@ func (f File) ListRegions(account types.Account) ([]string, error) {
 func (f File) DescribeNetworkInterfaces() (types.NetworkInterfaces, error) {
 	accounts, err := f.ListAccounts()
 	if err != nil {
-		return types.NetworkInterfaces{}, err
+		return nil, err
 	}
 
-	var networkInterfaces []types.NetworkInterface
+	var networkInterfaces types.NetworkInterfaces
 	for _, account := range accounts {
 		regions, err := f.ListRegions(account)
 		if err != nil {
-			return types.NetworkInterfaces{}, err
+			return nil, err
 		}
 		for _, region := range regions {
 			path := f.filePath(account.Id, region, ec2NetworkInterfacesKey)
@@ -117,6 +109,60 @@ func (f File) DescribeNetworkInterfaces() (types.NetworkInterfaces, error) {
 		}
 	}
 	return networkInterfaces, nil
+}
+
+// DescribeVpcs returns VPCs. If the file is not found,
+// NotFoundError is returned. Meaning that the user need to run import first.
+func (f File) DescribeVpcs() (types.Vpcs, error) {
+	accounts, err := f.ListAccounts()
+	if err != nil {
+		return nil, err
+	}
+
+	var vpcs types.Vpcs
+	for _, account := range accounts {
+		regions, err := f.ListRegions(account)
+		if err != nil {
+			return nil, err
+		}
+		for _, region := range regions {
+			path := f.filePath(account.Id, region, ec2VpcsKey)
+
+			var awsVpcs []ec2types.Vpc
+			if err := f.read(path, &awsVpcs); err != nil {
+				return nil, err
+			}
+			vpcs = append(vpcs, types.ToVpcs(account, region, awsVpcs)...)
+		}
+	}
+	return vpcs, nil
+}
+
+// DescribeSubnets returns subnets. If the file is not found,
+// NotFoundError is returned. Meaning that the user need to run import first.
+func (f File) DescribeSubnets() (types.Subnets, error) {
+	accounts, err := f.ListAccounts()
+	if err != nil {
+		return nil, err
+	}
+
+	var subnets types.Subnets
+	for _, account := range accounts {
+		regions, err := f.ListRegions(account)
+		if err != nil {
+			return nil, err
+		}
+		for _, region := range regions {
+			path := f.filePath(account.Id, region, ec2SubnetsKey)
+
+			var awsSubnets []ec2types.Subnet
+			if err := f.read(path, &awsSubnets); err != nil {
+				return nil, err
+			}
+			subnets = append(subnets, types.ToSubnets(account, region, awsSubnets)...)
+		}
+	}
+	return subnets, nil
 }
 
 func (f File) read(path string, v any) error {
