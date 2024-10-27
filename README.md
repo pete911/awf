@@ -30,3 +30,7 @@ ACCOUNT ID    AWS PROFILE   ENI         TYPE  DESCRIPTION                       
 987654321098  test-two      eni-abcxyz  nat   Interface for NAT Gateway nat-xyzabc1...  10.5.0.1      216.58.212.238 vpc-123xyz  test      subnet-beef  test-a
 987654321098  test-two      eni-abc123  nlb   ELB net/test-two-alb-internal/xyzabc1...  10.5.0.2                     vpc-123456  test      subnet-geef  test-b
 ```
+
+## release
+
+Releases are published when a new tag is created e.g. `git tag -m "initial release" v0.0.1 && git push --follow-tags`.
