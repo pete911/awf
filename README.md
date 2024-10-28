@@ -6,6 +6,17 @@ aws cli and this tool is:
 - no throttling (same as above, search is done against local storage)
 - if the import is done for multiple accounts, search is done across all imported resources
 
+## build/install
+
+### download
+
+-  download [release](https://github.com/pete911/awf/releases)
+
+### brew
+
+- add tap `brew tap pete911/tap`
+- install `brew install awf`
+
 ## import AWS data
 
 - `AWS_PROFILE=<profile> awf import`
