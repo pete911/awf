@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/pete911/awf/internal/out"
 	"github.com/pete911/awf/internal/types"
 	"github.com/spf13/cobra"
 	"os"
@@ -41,7 +40,7 @@ func runNi(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	networkInterfaces, err := fileStore.DescribeNetworkInterfaces()
+	nis, err := fileStore.DescribeNetworkInterfaces()
 	if err != nil {
 		fmt.Println(err.Error())
 		os.Exit(1)
@@ -49,24 +48,24 @@ func runNi(cmd *cobra.Command, args []string) {
 
 	var matched types.NetworkInterfaces
 	for _, arg := range args {
-		if nis := findNetworkInterfaces(arg, networkInterfaces); len(nis) > 0 {
+		if nis := findNetworkInterfaces(arg, nis); len(nis) > 0 {
 			matched = append(matched, nis...)
 		}
 	}
 
 	if len(matched) == 0 {
-		fmt.Printf("searched %d network interfaces, but none matched\n", len(networkInterfaces))
+		fmt.Printf("searched %d network interfaces, but none matched\n", len(nis))
 		return
 	}
 
 	printNi(matched, vpcs, sunbets)
 }
 
-func printNi(in types.NetworkInterfaces, vpcs types.Vpcs, subnets types.Subnets) {
-	table := out.NewTable(os.Stdout)
+func printNi(nis types.NetworkInterfaces, vpcs types.Vpcs, subnets types.Subnets) {
+	table := NewTable()
 	tableHeader := []string{"ACCOUNT ID", "AWS PROFILE", "ENI", "TYPE", "DESCRIPTION", "PRIVATE IP", "PUBLIC IP", "VPC ID", "VPC NAME", "SUBNET ID", "SUBNET NAME"}
 	table.AddRow(tableHeader...)
-	for _, v := range in {
+	for _, v := range nis {
 		var vpcName string
 		if x := vpcs.GetById(v.VpcId); len(x) != 0 {
 			vpcName = x[0].Name
@@ -81,13 +80,13 @@ func printNi(in types.NetworkInterfaces, vpcs types.Vpcs, subnets types.Subnets)
 			v.Account.Profile,
 			v.NetworkInterfaceId,
 			v.Type,
-			out.TrimTo(v.Description, 40),
+			v.Description,
 			strings.Join(v.PrivateIpAddresses, ", "),
 			v.PublicIP,
-			out.TrimTo(v.VpcId, 15),
-			out.TrimTo(vpcName, 15),
-			out.TrimTo(v.SubnetId, 15),
-			out.TrimTo(subnetName, 15),
+			v.VpcId,
+			vpcName,
+			v.SubnetId,
+			subnetName,
 		)
 	}
 	table.Print()

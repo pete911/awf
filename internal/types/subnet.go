@@ -28,6 +28,16 @@ func (v Subnets) GetById(in string) Subnets {
 	return out
 }
 
+func (v Subnets) GetByVpcId(in string) Subnets {
+	var out Subnets
+	for _, subnet := range v {
+		if subnet.VpcId == in {
+			out = append(out, subnet)
+		}
+	}
+	return out
+}
+
 func (v Subnets) GetByCidr(in string) Subnets {
 	// we want to match 10.0.10.0/24 with 10.0.0.0/16 as well
 	network, err := netip.ParsePrefix(in)

@@ -3,6 +3,8 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"github.com/pete911/awf/cmd/flag"
+	"github.com/pete911/awf/internal/out"
 	"github.com/pete911/awf/internal/store"
 	"github.com/spf13/cobra"
 	"net/netip"
@@ -11,9 +13,18 @@ import (
 )
 
 var (
-	Root    = &cobra.Command{}
-	Version string
+	GlobalFlags flag.Global
+	Root        = &cobra.Command{}
+	Version     string
 )
+
+func init() {
+	flag.InitPersistentFlags(Root, &GlobalFlags)
+}
+
+func NewTable() out.Table {
+	return out.NewTable(os.Stdout, GlobalFlags.Trim)
+}
 
 func LoadFileStore() store.File {
 	fileStorage, err := store.LoadFile()

@@ -40,6 +40,18 @@ func runVpc(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
+	sunbets, err := fileStore.DescribeSubnets()
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
+
+	nis, err := fileStore.DescribeNetworkInterfaces()
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
+
 	var matched types.Vpcs
 	for _, arg := range args {
 		if found := findVpcs(arg, vpcs); len(found) > 0 {
@@ -52,22 +64,27 @@ func runVpc(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	printVpcs(matched, accounts)
+	printVpcs(nis, matched, sunbets, accounts)
 }
 
-func printVpcs(in types.Vpcs, accounts types.Accounts) {
-	table := out.NewTable(os.Stdout)
-	tableHeader := []string{"ACCOUNT ID", "AWS PROFILE", "ID", "NAME", "CIDR", "OWNER ID", "OWNER PROFILE", "STATE", "DEFAULT"}
+// nis types.NetworkInterfaces, vpcs types.Vpcs, subnets types.Subnets
+func printVpcs(nis types.NetworkInterfaces, vpcs types.Vpcs, subnets types.Subnets, accounts types.Accounts) {
+	table := NewTable()
+	tableHeader := []string{"ACCOUNT ID", "AWS PROFILE", "ID", "NAME", "CIDR", "OWNER ID", "OWNER PROFILE", "SUBNETS", "INTERFACES", "STATE", "DEFAULT"}
 	table.AddRow(tableHeader...)
-	for _, v := range in {
+	for _, v := range vpcs {
+		numOfSubnets := len(subnets.GetByVpcId(v.VpcId))
+		numOfNis := len(nis.GetByVpcId(v.VpcId))
 		table.AddRow(
 			v.Account.Id,
 			v.Account.Profile,
 			v.VpcId,
-			out.TrimTo(v.Name, 40),
+			v.Name,
 			v.CidrBlock,
 			v.OwnerId,
 			accounts.GetById(v.OwnerId).Profile,
+			out.FromInt(numOfSubnets),
+			out.FromInt(numOfNis),
 			v.State,
 			fmt.Sprintf("%t", v.IsDefault),
 		)
@@ -79,7 +96,7 @@ func findVpcs(arg string, vpcs types.Vpcs) types.Vpcs {
 	if IsIP(arg) {
 		return vpcs.GetByIp(arg)
 	}
-	if IsEniId(arg) {
+	if IsVpcId(arg) {
 		return vpcs.GetById(arg)
 	}
 	if IsCIDR(arg) {

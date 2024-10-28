@@ -46,6 +46,12 @@ func runSubnet(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
+	nis, err := fileStore.DescribeNetworkInterfaces()
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
+
 	var matched types.Subnets
 	for _, arg := range args {
 		if found := findSubnets(arg, subnets); len(found) > 0 {
@@ -58,29 +64,31 @@ func runSubnet(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	printSubnets(matched, vpcs, accounts)
+	printSubnets(nis, vpcs, matched, accounts)
 }
 
-func printSubnets(in types.Subnets, vpcs types.Vpcs, accounts types.Accounts) {
-	table := out.NewTable(os.Stdout)
-	tableHeader := []string{"ACCOUNT ID", "AWS PROFILE", "VPC ID", "VPC NAME", "SUBNET ID", "SUBNET NAME", "CIDR", "OWNER ID", "OWNER PROFILE", "STATE"}
+func printSubnets(nis types.NetworkInterfaces, vpcs types.Vpcs, subnets types.Subnets, accounts types.Accounts) {
+	table := NewTable()
+	tableHeader := []string{"ACCOUNT ID", "AWS PROFILE", "VPC ID", "VPC NAME", "SUBNET ID", "SUBNET NAME", "CIDR", "OWNER ID", "OWNER PROFILE", "INTERFACES", "STATE"}
 	table.AddRow(tableHeader...)
-	for _, v := range in {
+	for _, v := range subnets {
 		var vpcName string
 		if x := vpcs.GetById(v.VpcId); len(x) != 0 {
 			vpcName = x[0].Name
 		}
+		numOfNis := len(nis.GetBySubnetId(v.SubnetId))
 
 		table.AddRow(
 			v.Account.Id,
 			v.Account.Profile,
 			v.VpcId,
-			out.TrimTo(vpcName, 40),
+			vpcName,
 			v.SubnetId,
-			out.TrimTo(v.Name, 40),
+			v.Name,
 			v.CidrBlock,
 			v.OwnerId,
 			accounts.GetById(v.OwnerId).Profile,
+			out.FromInt(numOfNis),
 			v.State,
 		)
 	}
@@ -91,7 +99,7 @@ func findSubnets(arg string, subnets types.Subnets) types.Subnets {
 	if IsIP(arg) {
 		return subnets.GetByIp(arg)
 	}
-	if IsEniId(arg) {
+	if IsSubnetId(arg) {
 		return subnets.GetById(arg)
 	}
 	if IsCIDR(arg) {

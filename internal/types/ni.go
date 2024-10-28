@@ -100,6 +100,26 @@ func (v NetworkInterfaces) GetById(id string) NetworkInterfaces {
 	return out
 }
 
+func (v NetworkInterfaces) GetByVpcId(id string) NetworkInterfaces {
+	var out NetworkInterfaces
+	for _, ni := range v {
+		if ni.VpcId == id {
+			out = append(out, ni)
+		}
+	}
+	return out
+}
+
+func (v NetworkInterfaces) GetBySubnetId(id string) NetworkInterfaces {
+	var out NetworkInterfaces
+	for _, ni := range v {
+		if ni.SubnetId == id {
+			out = append(out, ni)
+		}
+	}
+	return out
+}
+
 func (v NetworkInterfaces) GetByCidr(cidr string) NetworkInterfaces {
 	network, err := netip.ParsePrefix(cidr)
 	if err != nil {
