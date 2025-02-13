@@ -42,7 +42,7 @@ func Import(region string) error {
 		go func() {
 			defer wg.Done()
 			if err := i(account, cfg, file); err != nil {
-				fmt.Printf(err.Error())
+				fmt.Println(err.Error())
 				hasErrors = true
 			}
 		}()
